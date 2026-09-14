@@ -366,24 +366,31 @@ function oppnaDag(datumIso) {
   }).join('') +
     `<button type="button" class="kodknapp${!kod ? ' vald' : ''}" data-kod=""><b>–</b><small>Ledig</small></button>`;
 
+  // Utan schemalagt skift den dagen ska "Arbetade" inte förvalt se ikryssad ut.
+  const statusVisad = d.status || (kod ? 'arbete' : '');
   $('#statusval').innerHTML = Object.entries(STATUS).map(([k, v]) =>
-    `<button type="button" class="statusknapp s-${k}${(d.status || 'arbete') === k ? ' vald' : ''}" data-status="${k}">${v.namn}</button>`).join('');
+    `<button type="button" class="statusknapp s-${k}${statusVisad === k ? ' vald' : ''}" data-status="${k}">${v.namn}</button>`).join('');
 
   $('#aterstall').hidden = !egen;
   $('#franvaro').value = d.franvaroTim || '';
+  $('#stampIn').value = d.stamp?.in || '';
+  $('#stampUt').value = d.stamp?.ut || '';
   ritaExtra(d.extra || []);
   $('#dagDialog').showModal();
+  document.activeElement?.blur();
 }
 
 function ritaExtra(extra) {
   $('#extrarader').innerHTML = extra.length ? extra.map((p, i) => `
-    <div class="passrad" data-i="${i}">
-      <div><label for="s${i}">Från</label><input id="s${i}" type="time" value="${p.start}" data-falt="start"></div>
-      <div><label for="e${i}">Till</label><input id="e${i}" type="time" value="${p.slut}" data-falt="slut"></div>
-      <button type="button" class="taBort" aria-label="Ta bort raden">✕</button>
-    </div>
-    <div class="kryss"><input type="checkbox" id="i${i}" ${p.installelse ? 'checked' : ''}>
-      <label for="i${i}">Inkallad på ledig tid</label></div>`).join('')
+    <div class="extrakort">
+      <div class="passrad" data-i="${i}">
+        <div><label for="s${i}">Från</label><input id="s${i}" type="time" value="${p.start}" data-falt="start"></div>
+        <div><label for="e${i}">Till</label><input id="e${i}" type="time" value="${p.slut}" data-falt="slut"></div>
+        <button type="button" class="taBort" aria-label="Ta bort raden">✕</button>
+      </div>
+      <div class="kryss"><input type="checkbox" id="i${i}" ${p.installelse ? 'checked' : ''}>
+        <label for="i${i}">Inkallad på ledig tid</label></div>
+    </div>`).join('')
     : '<p class="hjalp" style="margin:0 0 4px">Ingen extratid registrerad.</p>';
 }
 
@@ -568,12 +575,19 @@ $('#nasta').onclick = () => { visadManad.setMonth(visadManad.getMonth() + 1); vi
 
 /* dagen */
 $('#laggExtra').onclick = () => ritaExtra([...lasExtra(), { start: '22:16', slut: '02:00', installelse: false }]);
+$('#rensaStampling').onclick = () => { $('#stampIn').value = ''; $('#stampUt').value = ''; };
 $('#sparaDag').onclick = () => {
+  const stampIn = $('#stampIn').value, stampUt = $('#stampUt').value;
+  const klarSedan = data.dagar[aktivtDatum]?.stamp?.klar;
+  const stamp = (stampIn || stampUt)
+    ? { ...(stampIn ? { in: stampIn } : {}), ...(stampUt ? { ut: stampUt } : {}), ...(klarSedan ? { klar: true } : {}) }
+    : {};
   data.dagar[aktivtDatum] = {
     kod: $('#kodval .vald')?.dataset.kod ?? '',
     status: $('#statusval .vald')?.dataset.status || 'arbete',
     extra: lasExtra(),
     franvaroTim: Number(String($('#franvaro').value).replace(',', '.')) || 0,
+    stamp,
   };
   spara(); $('#dagDialog').close(); visaManad();
 };

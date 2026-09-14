@@ -36,7 +36,7 @@ header {
   background: rgba(245, 245, 247, 0.88);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  padding: 16px 20px 12px;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 12px;
 }
 .manadsval { display: flex; align-items: center; gap: 4px; max-width: 620px; margin: 0 auto; }
 .manadsval h1 {
@@ -153,6 +153,16 @@ dialog h4 { font-size: 13px; font-weight: 600; color: var(--dampad); margin: 24p
 
 .passrad { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 10px; }
 .passrad button { border: 0; background: var(--yta); border-radius: 11px; height: 44px; width: 44px; font-size: 17px; cursor: pointer; color: var(--storhelg); }
+.extrakort { background: var(--yta); border-radius: 13px; padding: 12px; margin-bottom: 10px; }
+.extrakort .passrad { margin-bottom: 0; }
+.extrakort .passrad button { background: var(--falt); }
+.extrakort .kryss { margin-top: 12px; }
+.laggtill {
+  display: block; width: 100%; margin-top: 4px; padding: 13px; border-radius: 13px;
+  border: 1.5px dashed var(--linje); background: none; color: var(--lank);
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.laggtill:active { background: var(--falt); }
 
 
 :focus-visible { outline: 2px solid var(--lank); outline-offset: 2px; }
