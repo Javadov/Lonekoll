@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skiftlön</title>
+<meta name="theme-color" content="#f5f5f7">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./ikon-192.png">
+<link rel="apple-touch-icon" href="./ikon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<!-- Onboarding-dialog (första gången) -->
+<dialog id="onboardingDialog" class="onboarding">
+  <div class="onboarding-inner">
+    <div class="onboarding-logo">
+      <svg viewBox="0 0 48 48" width="64" height="64" fill="none">
+        <rect width="48" height="48" rx="14" fill="url(#og)"/>
+        <defs><linearGradient id="og" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#4a90d9"/><stop offset="1" stop-color="#7c5cbf"/></linearGradient></defs>
+        <path d="M24 12v6M24 30v6M14 24h6M28 24h6" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="24" cy="24" r="5" stroke="#fff" stroke-width="2"/>
+      </svg>
+    </div>
+    <h2 class="onboarding-title">Välkommen till Skiftlön</h2>
+    <p class="onboarding-sub">Fyll i ditt namn och din månadslön så kommer vi igång.</p>
+    <label for="onboardNamn">Ditt namn</label>
+    <input id="onboardNamn" placeholder="T.ex. Elvin" autocomplete="given-name">
+    <label for="onboardLon">Månadslön (kr)</label>
+    <input id="onboardLon" inputmode="decimal" placeholder="T.ex. 32 000">
+    <button class="knapp onboarding-btn" id="onboardSpara">Kom igång</button>
+  </div>
+</dialog>
+
+<header>
+  <!-- Hälsningsrad med logo -->
+  <div class="halsning" id="halsning" hidden>
+    <svg class="halsning-logo" viewBox="0 0 32 32" width="28" height="28" fill="none">
+      <rect width="32" height="32" rx="9" fill="url(#hg)"/>
+      <defs><linearGradient id="hg" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#4a90d9"/><stop offset="1" stop-color="#7c5cbf"/></linearGradient></defs>
+      <path d="M16 8v4M16 20v4M10 16h4M18 16h4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="16" cy="16" r="3.2" stroke="#fff" stroke-width="1.5"/>
+    </svg>
+    <span id="halsningText">Hej</span>
+  </div>
+  <div class="manadsval">
+    <button class="pil" id="foregaende" aria-label="Föregående månad">‹</button>
+    <h1 id="manadsnamn">—</h1>
+    <button class="pil" id="nasta" aria-label="Nästa månad">›</button>
+  </div>
+</header>
+
+<main>
+  <section class="vy" id="vyManad">
+    <div class="stampelkort">
+      <div class="stampeltext">
+        <b id="stampelDag"></b>
+        <small id="stampelPass"></small>
+        <small id="stampelStatus" class="stampelstatus"></small>
+      </div>
+      <button class="knapp" id="stamplaKnapp" data-riktning="in">Stämpla in</button>
+    </div>
+    <p class="melding" id="melding" hidden></p>
+    <p class="melding tips" id="tips" hidden></p>
+
+    <div class="kalender">
+      <div class="veckodagar" id="veckodagar"></div>
+      <div class="rutnat" id="rutnat"></div>
+    </div>
+    <div class="kort" style="margin-top:12px">
+      <div class="legend" id="legend"></div>
+      <div class="netto">
+        <span>Utbetalt efter skatt<br><small id="bruttoRad"></small></span>
+        <span class="nettohoger">
+          <strong class="num" id="nettoBelopp">—</strong>
+          <button class="oga" hidden>Visa</button>
+        </span>
+      </div>
+      <p class="hjalp" id="franvarorad" style="margin:10px 0 0"></p>
+    </div>
+    <p class="hjalp">Prick i hörnet betyder att dagen är ändrad mot rotationen.</p>
+  </section>
+
+  <section class="vy" id="vyLon" hidden>
+    <h2 class="medoga">Beräknad lönespecifikation <button class="oga" hidden>Visa</button></h2>
+    <p class="hjalp" id="timsatser"></p>
+    <div class="kort"><table id="lonespec"></table></div>
+    <p class="hjalp">Semestertillägg, komptid och sjuklön ingår inte. Lönen betalas en månad i efterskott.</p>
+  </section>
+
+  <section class="vy" id="vySchema" hidden>
+    <div class="segment">
+      <button data-panel="Skift" aria-current="true">Skift</button>
+      <button data-panel="Rotationer">Rotationer</button>
+    </div>
+
+    <div id="panelSkift">
+      <div class="kortlista" id="skiftlista"></div>
+      <div class="knappar"><button class="knapp" id="nyttSkift">Nytt skift</button></div>
+    </div>
+
+    <div id="panelRotationer" hidden>
+      <div class="kortlista" id="rotationslista"></div>
+      <div class="knappar"><button class="knapp" id="nyRotation">Ny rotation</button></div>
+      <p class="hjalp">Rotationen fyller kalendern automatiskt. Enskilda dagar du ändrar i kalendern ligger kvar.</p>
+    </div>
+  </section>
+
+  <section class="vy" id="vyInstallningar" hidden>
+    <div class="segment">
+      <button data-panel="Profil" aria-current="true">Profil</button>
+      <button data-panel="App">App</button>
+    </div>
+
+    <div id="panelProfil">
+      <h2>Ditt namn</h2>
+      <div class="kort">
+        <label for="profilNamn">Namn</label>
+        <input id="profilNamn" placeholder="Ditt namn">
+      </div>
+      <h2>Din lön</h2>
+      <div class="kort">
+        <label for="manadslon">Månadslön</label>
+        <input id="manadslon" inputmode="decimal">
+        <div class="rad2">
+          <div><label for="obVardag">OB vardag, kr/h</label><input id="obVardag" inputmode="decimal"></div>
+          <div><label for="obHelg">OB helg, kr/h</label><input id="obHelg" inputmode="decimal"></div>
+          <div><label for="obStorhelg">OB storhelg, kr/h</label><input id="obStorhelg" inputmode="decimal"></div>
+          <div><label for="installVardag">Inställelse vardag</label><input id="installVardag" inputmode="decimal"></div>
+          <div><label for="installHelg">Inställelse helg</label><input id="installHelg" inputmode="decimal"></div>
+        </div>
+      </div>
+
+      <h2>Övertid</h2>
+      <p class="hjalp">Månadslönen delas med första talet för grundpengen och med det andra för övertidstillägget.</p>
+      <div class="kort">
+        <div class="rad2">
+          <div><label for="otBasDiv">Delare grundpeng</label><input id="otBasDiv" inputmode="numeric"></div>
+          <div><label for="otTillaggDiv">Delare övertidstillägg</label><input id="otTillaggDiv" inputmode="numeric"></div>
+        </div>
+        <div class="kryss">
+          <input type="checkbox" id="obPaOvertid">
+          <label for="obPaOvertid">OB-tillägg även på övertidstimmar</label>
+        </div>
+      </div>
+
+      <h2>Fackavgift</h2>
+      <div class="kort">
+        <div class="kryss" style="margin-top:0">
+          <input type="checkbox" id="fackPa">
+          <label for="fackPa">Jag betalar fackavgift</label>
+        </div>
+        <div id="fackFalt">
+          <label for="fackProcent">Procent av bruttolönen</label>
+          <input id="fackProcent" inputmode="decimal">
+          <p class="hjalp" id="fackSpann" style="margin-left:0"></p>
+        </div>
+      </div>
+<!-- 
+      <h2>Skatt</h2>
+      <p class="hjalp">En rad per punkt: bruttolön och skatt, hämtat från dina egna lönespecar. Appen drar en rak linje mellan punkterna. Med två eller tre punkter blir nettolönen nära nog.</p>
+      <div class="kort">
+        <label for="skattPunkter">Punkter från lönespecarna</label>
+        <textarea id="skattPunkter" rows="4" spellcheck="false"></textarea>
+      </div> -->
+    </div>
+
+    <div id="panelApp" hidden>
+      <h2>Integritet</h2>
+      <div class="kort">
+        <div class="kryss" style="margin-top:0">
+          <input type="checkbox" id="doljLon">
+          <label for="doljLon">Dölj beloppen<br><small style="color:var(--dampad)">Siffrorna byts mot prickar. En knapp visar dem när du vill.</small></label>
+        </div>
+      </div>
+
+      <h2>Säkerhetskopia</h2>
+      <p class="hjalp">All data ligger i den här enheten. Exportera innan du byter telefon eller rensar webbläsaren.</p>
+      <div class="kort">
+        <div class="knappar" style="margin-top:0">
+          <button class="knapp sekundar" id="exportera">Exportera till fil</button>
+          <label class="knapp sekundar" for="importera" style="margin:0">Läs in fil<input type="file" id="importera" accept="application/json" hidden></label>
+        </div>
+      </div>
+
+      <h2>Arbetsplats</h2>
+      <p class="hjalp">Stå på jobbet och spara positionen. Sedan kontrollerar stämplingen att du är inom radien.</p>
+      <div class="kort">
+        <label for="radie">Radie i meter</label>
+        <input id="radie" type="number" inputmode="numeric">
+        <p class="hjalp" id="platsStatus" style="margin-left:0"></p>
+        <div class="knappar">
+          <button class="knapp sekundar" id="sparaPlats">Använd min position</button>
+          <button class="knapp sekundar" id="glomPlats" hidden>Glöm platsen</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="knappar"><button class="knapp" id="sparaInstallningar">Spara</button></div>
+  </section>
+</main>
+
+<nav>
+  <div class="flikar">
+    <button data-vy="vyManad" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><span>Kalender</span></button>
+    <button data-vy="vyLon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M14.5 9.5c-.6-.7-1.5-1-2.5-1-1.4 0-2.5.7-2.5 1.9 0 2.6 5 1.4 5 4 0 1.2-1.1 2-2.5 2-1 0-1.9-.3-2.5-1"/></svg><span>Lön</span></button>
+    <button data-vy="vySchema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V7a3 3 0 0 1 3-3h10l-2.5-2.5M20 15v2a3 3 0 0 1-3 3H7l2.5 2.5"/><path d="M17 4l-2.5 2.5M7 20l2.5-2.5"/></svg><span>Schema</span></button>
+    <button data-vy="vyInstallningar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.2M12 19.3v2.2M21.5 12h-2.2M4.7 12H2.5M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6M18.7 18.7l-1.6-1.6M6.9 6.9L5.3 5.3"/></svg><span>Inställningar</span></button>
+  </div>
+</nav>
+
+<dialog id="dagDialog">
+  <h3 id="dagTitel"></h3>
+  <p class="hjalp" id="dagSchema" style="margin-left:0"></p>
+  <h4>Skift</h4>
+  <div class="kodval" id="kodval"></div>
+  <p class="hjalp" style="margin-left:0">Byt bara skift här om din rotation faktiskt ändrats den här dagen. Jobbade du extra utöver ditt vanliga schema (eller en hel extra dag), lämna skiftet som det är och lägg istället till timmarna som Extratid nedan – annars räknas de inte som övertid.</p>
+  <h4>Vad hände den dagen</h4>
+  <div class="statusval" id="statusval"></div>
+  <p class="hjalp" style="margin-left:0">Semester ger inget avdrag. Föräldraledig och vab drar passets timmar.</p>
+  <h4>Extratid</h4>
+  <div id="extrarader"></div>
+  <div class="knappar"><button class="knapp sekundar" id="laggExtra">Lägg till extratid</button></div>
+  <label for="franvaro">Extra frånvarotimmar med avdrag</label>
+  <input id="franvaro" inputmode="decimal" placeholder="0">
+  <div class="knappar">
+    <button class="knapp" id="sparaDag">Spara dagen</button>
+    <button class="knapp sekundar" id="stangDag">Avbryt</button>
+    <button class="knapp sekundar" id="aterstall" hidden>Följ rotationen</button>
+  </div>
+</dialog>
+
+<dialog id="skiftDialog">
+  <h3 id="skiftTitel"></h3>
+  <div class="kort" style="margin-top:16px">
+    <label for="sNamn">Namn</label>
+    <input id="sNamn" placeholder="Föremiddag">
+    <div class="rad2">
+      <div><label for="sKod">Kod</label><input id="sKod" maxlength="3"></div>
+      <div><label for="sStart">Börjar</label><input id="sStart" type="time"></div>
+      <div><label for="sSlut">Slutar</label><input id="sSlut" type="time"></div>
+    </div>
+    <label>Färg</label>
+    <div class="fargval" id="fargval"></div>
+  </div>
+  <div class="knappar">
+    <button class="knapp" id="sparaSkift">Spara</button>
+    <button class="knapp sekundar" id="stangSkift">Avbryt</button>
+    <button class="knapp sekundar" id="taBortSkift">Ta bort</button>
+  </div>
+</dialog>
+
+<dialog id="rotationDialog" class="stor">
+  <h3 id="rTitel"></h3>
+  <div class="kort" style="margin-top:16px">
+    <div class="rad2">
+      <div><label for="rNamn">Namn</label><input id="rNamn"></div>
+      <div><label for="rLangd">Längd i dygn</label><input id="rLangd" type="number" inputmode="numeric"></div>
+      <div><label for="rStart">Börjar</label><input id="rStart" type="date"></div>
+      <div><label for="rSlut">Slutar</label><input id="rSlut" type="date"></div>
+    </div>
+    <div class="kryss">
+      <input type="checkbox" id="rTillsvidare">
+      <label for="rTillsvidare">Fortsätt tills vidare</label>
+    </div>
+  </div>
+
+  <h4>Mönster</h4>
+  <p class="hjalp" style="margin:0 0 8px">Välj ett skift nedan och tryck på dygnen det gäller.</p>
+  <div class="monster" id="monster"></div>
+  <div class="penselval" id="penselval"></div>
+
+  <div class="knappar">
+    <button class="knapp" id="sparaRotation">Spara</button>
+    <button class="knapp sekundar" id="stangRotation">Avbryt</button>
+    <button class="knapp sekundar" id="taBortRotation">Ta bort</button>
+  </div>
+</dialog>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
