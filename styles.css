@@ -132,7 +132,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
 dialog h3 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; text-transform: capitalize; }
 dialog h4 { font-size: 13px; font-weight: 600; color: var(--dampad); margin: 24px 0 8px; padding-left: 4px; }
 
-.kodval { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.kodval { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .kodknapp {
   border: 0; background: var(--yta); border-radius: 13px; padding: 10px 4px;
   font: inherit; color: var(--ink); cursor: pointer;
@@ -452,5 +452,42 @@ h2.medoga { display: flex; align-items: center; justify-content: space-between; 
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Draghandtag för att svepa ner och stänga en dialog */
+dialog:not(.onboarding)::before {
+  content: '';
+  display: block;
+  width: 36px; height: 5px;
+  margin: -10px auto 16px;
+  border-radius: 3px;
+  background: var(--linje);
+}
+
+/* "Lägg till på hemskärmen"-spärr */
+.pwa-gate {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: rgba(30, 30, 40, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.pwa-gate[hidden] { display: none; }
+.pwa-gate-inner {
+  width: 100%; max-width: 380px;
+  background: var(--yta); color: var(--ink);
+  border-radius: 28px; padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .18), 0 0 0 .5px rgba(0, 0, 0, .06);
+}
+.pwa-gate-inner h2 { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; margin: 16px 0 6px; }
+.pwa-gate-steg {
+  text-align: left; font-size: 14px; color: var(--ink);
+  margin: 18px 0 22px; padding-left: 22px; line-height: 1.7;
+}
+.pwa-gate-inner #fortsattAnda {
+  border: 0; background: none; color: var(--dampad);
+  font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 6px;
 }
 

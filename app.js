@@ -107,6 +107,44 @@ const skiftFor = kod => data.skift.find(s => s.kod === kod) || null;
 const nyttId = () => Math.random().toString(36).slice(2, 9);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+/** Låter en <dialog> svepas nedåt för att stängas, som ett bottom sheet. */
+function svepForAttStanga(dialogEl) {
+  const troskel = 90;
+  let startY = null, dy = 0, drar = false;
+
+  dialogEl.addEventListener('touchstart', e => {
+    if (dialogEl.scrollTop > 0) { startY = null; return; }
+    startY = e.touches[0].clientY;
+    dy = 0; drar = false;
+    dialogEl.style.transition = 'none';
+  }, { passive: true });
+
+  dialogEl.addEventListener('touchmove', e => {
+    if (startY === null) return;
+    dy = e.touches[0].clientY - startY;
+    if (dy <= 0) { dialogEl.style.transform = ''; return; }
+    if (!drar && dy > 6) drar = true;
+    if (drar) {
+      e.preventDefault();
+      dialogEl.style.transform = `translateY(${dy}px)`;
+    }
+  }, { passive: false });
+
+  const slut = () => {
+    if (startY === null) return;
+    dialogEl.style.transition = 'transform 220ms cubic-bezier(.2,.8,.2,1)';
+    if (drar && dy > troskel) {
+      dialogEl.style.transform = 'translateY(100%)';
+      setTimeout(() => { dialogEl.close(); dialogEl.style.transform = ''; }, 200);
+    } else {
+      dialogEl.style.transform = '';
+    }
+    startY = null; drar = false;
+  };
+  dialogEl.addEventListener('touchend', slut);
+  dialogEl.addEventListener('touchcancel', slut);
+}
+
 function klocka(datum, hhmm) {
   const [h, m] = hhmm.split(':').map(Number);
   return new Date(datum.getFullYear(), datum.getMonth(), datum.getDate(), h, m);
@@ -574,7 +612,7 @@ $('#foregaende').onclick = () => { visadManad.setMonth(visadManad.getMonth() - 1
 $('#nasta').onclick = () => { visadManad.setMonth(visadManad.getMonth() + 1); visaManad(); };
 
 /* dagen */
-$('#laggExtra').onclick = () => ritaExtra([...lasExtra(), { start: '22:16', slut: '02:00', installelse: false }]);
+$('#laggExtra').onclick = () => ritaExtra([...lasExtra(), { start: '14:00', slut: '22:16', installelse: false }]);
 $('#rensaStampling').onclick = () => { $('#stampIn').value = ''; $('#stampUt').value = ''; };
 $('#sparaDag').onclick = () => {
   const stampIn = $('#stampIn').value, stampUt = $('#stampUt').value;
@@ -722,17 +760,6 @@ async function laddaSkattetabell() {
   } catch { return null; }
 }
 
-(async () => {
-  data = await ladda();
-  skattetabell = await laddaSkattetabell();
-  visaManad();
-  const bad = new URLSearchParams(location.search).get('stampla');
-  if (bad === 'in' || bad === 'ut') {
-    history.replaceState(null, '', location.pathname);
-    stampla(bad);
-  }
-})();
-
 /* ---------- onboarding ---------- */
 function visaHalsning() {
   const el = $('#halsning');
@@ -770,8 +797,21 @@ $('#onboardSpara').onclick = () => {
   visaManad();
 };
 
+for (const id of ['dagDialog', 'skiftDialog', 'rotationDialog']) svepForAttStanga($('#' + id));
+
+const pwaGate = $('#pwaGate');
+if (pwaGate) {
+  const installerad = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (!installerad && !sessionStorage.getItem('pwaGateOk')) pwaGate.hidden = false;
+  $('#fortsattAnda').onclick = () => {
+    sessionStorage.setItem('pwaGateOk', '1');
+    pwaGate.hidden = true;
+  };
+}
+
 (async () => {
   data = await ladda();
+  skattetabell = await laddaSkattetabell();
   visaManad();
 
   // Första gången: visa onboarding
