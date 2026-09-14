@@ -288,6 +288,7 @@ function melding(text) {
 }
 
 function visaStampel() {
+  if (!$('#stamplaKnapp')) return;
   const nu = new Date();
   const d = data.dagar[iso(nu)] || {};
   const stamp = d.stamp || {};
@@ -723,7 +724,7 @@ document.addEventListener('click', e => {
   visaManad();
 });
 
-$('#stamplaKnapp').onclick = e => stampla(e.currentTarget.dataset.riktning);
+$('#stamplaKnapp')?.addEventListener('click', e => stampla(e.currentTarget.dataset.riktning));
 
 $('#sparaPlats').onclick = async () => {
   $('#platsStatus').textContent = 'Läser position…';
